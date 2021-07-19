@@ -127,6 +127,7 @@ def rules_var_replace_name(mscline, newvar, oldvar):
     return new_var_list
 
 def rules_tag_append(mscline, newtag, last_tag_line):
+    global lineno_offset
     new_act_list = []
     increment_lineno = False
     if mscline["type"] == "SecRule":
@@ -149,12 +150,13 @@ def rules_tag_append(mscline, newtag, last_tag_line):
                     if args.debug:
                         dprint(current_rule_id, "append-tag", f"append tag {newtag} on line {last_tag_line}", 0)
                     increment_lineno = True
+                    lineno_offset += 1
                 else:
                     new_act_list.append(act)
             else:
                 if increment_lineno:
                     last_tag_line += 1
-                    act["lineno"] = last_tag_line
+                    act["lineno"] = act["lineno"] + 1
                 new_act_list.append(act)
     return new_act_list
 
@@ -410,6 +412,7 @@ with open(args.config) as file:
 
     increment_lineno = False
     decrement_lineno = False
+    lineno_offset = 0
 
     l = 0
     last_rule_id = 0
@@ -426,20 +429,20 @@ with open(args.config) as file:
         if increment_lineno:
             if "lineno" in i:
                 main_lineno = i["lineno"]
-                mparser.configlines[l]["lineno"] += 1
+                mparser.configlines[l]["lineno"] += lineno_offset
 
             if "oplineno" in i:
-                mparser.configlines[l]["oplineno"] += 1
+                mparser.configlines[l]["oplineno"] += lineno_offset
 
             act_n = 0
             if "actions" in i:
                 for act in i["actions"]:
-                    if act["lineno"] != main_lineno:
-                        mparser.configlines[l]["actions"][act_n]["lineno"] += 1
+                    if act["lineno"]+lineno_offset != main_lineno:
+                        mparser.configlines[l]["actions"][act_n]["lineno"] += lineno_offset
                     else:
-                        mparser.configlines[l]["actions"][act_n]["lineno"] = mparser.configlines[l]["lineno"]
+                        mparser.configlines[l]["actions"][act_n]["lineno"] = mparser.configlines[l]["lineno"] + lineno_offset
                     act_n += 1
-        
+
         if decrement_lineno:
             if "lineno" in i:
                 main_lineno = i["lineno"]
@@ -572,7 +575,7 @@ with open(args.config) as file:
             mparser.configlines[l]["actions"] = new_act
 
         l += 1
-    
+
     mwriter = msc_pyparser.MSCWriter(mparser.configlines)
     mwriter.generate()
     
