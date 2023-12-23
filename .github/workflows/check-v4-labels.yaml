@@ -1,0 +1,37 @@
+name: Check "v4" labeled PRs and issues
+on:
+  schedule:
+    - cron: '0 2 * * *' # run at 2 AM UTC
+
+jobs:
+  check-v4-labels:
+    name:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repo"
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: "Run script"
+        run: |
+          chmod +x .github/check-v4-labels.py
+          .github/check-v4-labels.py > output.txt
+          echo "::set-output name=result::$(cat output.txt)"
+        env:
+          # Required for the use of the gh CLI in the script
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      #- name: Send to Slack
+      #    uses: rtCamp/action-slack-notify@v3
+      #    with:
+      #      status: ${{ job.status }}
+      #      text: |
+      #        Job Completed!
+      #        Result: ${{ steps.run-script.outputs.result }}
+      #    env:
+      #      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
