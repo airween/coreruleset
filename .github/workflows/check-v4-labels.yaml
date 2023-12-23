@@ -18,9 +18,11 @@ jobs:
 
       - name: "Run script"
         run: |
-          chmod +x .github/check-v4-labels.py
-          .github/check-v4-labels.py > output.txt
-          echo "::set-output name=result::$(cat output.txt)"
+          {
+            echo 'result<<EOF'
+            .github/check-v4-labels.py
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
         env:
           # Required for the use of the gh CLI in the script
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
